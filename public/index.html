@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <title>ChessWeb</title>
+      <link rel="stylesheet" href="lib/chessboardjs/chessboard-1.0.0.min.css">
+      <style>
+         body {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         height: 100vh;
+         background: #f0f0f0;
+         }
+         #board {
+         width: 500px;
+         }
+      </style>
+   </head>
+   <body>
+      <!-- versus AI toggle -->
+      <button id="toggle-ai">Play vs AI: OFF</button>
+      <div id="board" style="width: 400px"></div>
+      <div id="board"></div>
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <script src="lib/chessboardjs/chessboard-1.0.0.min.js"></script>
+      <script src="lib/chessjs/chess.min.js"></script>
+      <script>
+         var board = null
+         var game = new Chess()
+         
+         board = Chessboard('board', {
+           draggable: true,
+           position: 'start',
+           pieceTheme: 'lib/chessboardjs/img/chesspieces/wikipedia/{piece}.png',
+           onDragStart: onDragStart,
+           onDrop: onDrop,
+           onSnapEnd: onSnapEnd
+         });
+         let playVsAI = false;
+         
+         function onDragStart (source, piece, position, orientation) {
+           if (game.game_over()) return false
+         
+           // don’t pick up pieces if it’s not that side’s turn
+           if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+               (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+             return false
+           }
+         }
+         
+         
+         function onDrop (source, target) {
+           // see if the move is legal
+           var move = game.move({
+             from: source,
+             to: target,
+             promotion: 'q' // auto promote to queen
+           })
+         
+         
+           // illegal move
+           if (move === null) return 'snapback'
+         
+           updateStatus()
+         }
+         
+         function onSnapEnd () {
+           board.position(game.fen());
+         if (playVsAI) {
+           window.setTimeout(makeRandomMove, 250);
+         }
+         }
+         
+         
+         function makeRandomMove() {
+         var possibleMoves = game.moves();
+         if (possibleMoves.length === 0) return;
+         var randomIndex = Math.floor(Math.random() * possibleMoves.length);
+         game.move(possibleMoves[randomIndex]);
+         board.position(game.fen());
+         }
+         
+         function updateStatus () {
+           var status = ''
+         
+           var moveColor = 'White'
+           if (game.turn() === 'b') {
+             moveColor = 'Black'
+           }
+         
+           // checkmate?
+           if (game.in_checkmate()) {
+             status = 'Game over, ' + moveColor + ' is checkmated.'
+           }
+         
+           // draw?
+           else if (game.in_draw()) {
+             status = 'Game over, drawn position'
+           }
+         
+           // game still on
+           else {
+             status = moveColor + ' to move'
+         
+             // check?
+             if (game.in_check()) {
+               status += ', ' + moveColor + ' is in check'
+             }
+           }
+         
+           console.log(status)
+         }
+         document.getElementById("toggle-ai").addEventListener("click", function() {
+         playVsAI = !playVsAI;
+         this.textContent = playVsAI ? "Play vs AI: ON" : "Play vs AI: OFF";
+         });
+         
+      </script>
+   </body>
+</html>
